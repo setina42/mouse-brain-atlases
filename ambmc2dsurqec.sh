@@ -1,18 +1,9 @@
 #!/bin/bash
 
-PN=$1
-PV=$2
-if [ -z "$PV" ]; then
-        PV=9999
-fi
-if [ -z "$PN" ]; then
-        PN="ambmc2dsurqec"
-fi
-P="${PN}-${PV}"
-mkdir ${P}
-pushd ${P}
-          
+STANDALONE=$1
 
+#Standalone: Need to download atlas and transform beforehand
+if [ -n "${STANDALONE}" ]; then
         wget http://repo.mouseimaging.ca/repo/DSURQE_40micron_nifti/DSURQE_40micron_average.nii
         wget http://repo.mouseimaging.ca/repo/DSURQE_40micron_nifti/DSURQE_40micron_mask.nii
 
@@ -53,4 +44,16 @@ pushd ${P}
         # Cleanup
         rm -rf ambmc-c57bl6-model-symmet_v0.8-nii*
         rm -rf _*ambmc*nii*
-popd
+fi
+
+#Run AntsRegisatr
+
+
+#If not STANDALONE, then move file to PHD
+if [ -n "${STANDALONE}" ]; then
+        HD=find . -name "*HD*" -type d        
+        mv filename $HD
+
+fi 
+
+
