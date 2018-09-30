@@ -16,7 +16,8 @@ if [ -n "${STANDALONE}" ]; then
         fslorient -copysform2qform dsurqec_40micron_mask.nii
 
         # Resize
-        ResampleImage 3 dsurqec_40micron.nii dsurqec_15micron.nii 0.015x0.015x0.015 size=1 spacing=0 4
+        ResampleImage 3 dsurqec_40micron.nii _dsurqec_15micron.nii 0.015x0.015x0.015 size=1 spacing=0 4
+        SmoothImage 3 _dsurqec_15micron.nii 0.4 dsurqec_15micron.nii
         fslorient -copyqform2sform dsurqec_15micron.nii
         ResampleImage 3 dsurqec_40micron_mask.nii dsurqec_15micron_mask.nii 0.015x0.015x0.015 size=1 spacing=0 1
         fslorient -copyqform2sform dsurqec_15micron_mask.nii
@@ -29,6 +30,7 @@ if [ -n "${STANDALONE}" ]; then
         rm dsurqec_40micron_mask.nii
         rm dsurqec_15micron.nii
         rm dsurqec_15micron_mask.nii
+        rm _dsurqec_15micron.nii 
         
 
         # Download Upstream Template
