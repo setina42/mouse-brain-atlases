@@ -46,6 +46,7 @@ pushd ${P}
           bash ../ambmc2dsurqec.sh || exit 1
           mv ambmc2dsurqec_15micron.nii.gz ../{$PHD}
           mv ambmc2dsurqec_15micron.obj ../{PHD}
+     fi
 popd
 tar cfJ "${P}.tar.xz" ${P}
 tar cfJ "${PHD}.tar.xz" ${PHD}
