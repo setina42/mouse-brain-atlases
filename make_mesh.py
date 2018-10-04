@@ -7,7 +7,7 @@ import numpy
 import os
 
 path = os.path.abspath('.')
-file = path + '/dsurqec_40micron.nii'
+file = path + '/ambmc2dsurqec_15micron_masked.nii.gz'
 
 #Load nifti
 img= nibabel.load(file)
