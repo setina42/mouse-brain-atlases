@@ -45,7 +45,7 @@ pushd ${P}
      rm abi_10_annotation.nii.gz
      mv abi_15_average.nii.gz ../${PHD}
      mv abi_15_annotation.nii.gz ../${PHD}
-     if [$MAKE_MESH]; then
+     if [ $MAKE_MESH ]; then
           bash ../ambmc2dsurqec.sh || exit 1
           mv ambmc2dsurqec_15micron.nii.gz ../{$PHD}
           mv ambmc2dsurqec_15micron.obj ../{PHD}
