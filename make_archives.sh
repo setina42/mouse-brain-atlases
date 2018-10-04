@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-
 ##Possible calls to script: make_archives.sh PN PV | make_archives.sh --make-mesh | make_archives PN PV --make-mesh | make_archives.sh 
-#Handle every case correctly:
-#Looks sort of ugly so far....
 MAKE_MESH=false
 
-if [ "$1" == "--make_mesh" ]; then
+if [ "$1" == "--make-mesh" ]; then
      MAKE_MESH=true
      PN=$2
      PV=$3
@@ -14,7 +11,7 @@ if [ "$1" == "--make_mesh" ]; then
 else 
      PN=$1
      PV=$2
-     if [ "$3" == "--make_mesh" ]; then
+     if [ "$3" == "--make-mesh" ]; then
           MAKE_MESH=true
      fi
 fi
