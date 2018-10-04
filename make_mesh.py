@@ -1,26 +1,37 @@
 import sys
-from glob import import glob
+from glob import glob
 import skimage
-from skimage import import measure
+from skimage import measure
 import vtk
 import nibabel
 import numpy
 
+path = os.path.abspath('.')
+file = glob(path + 'ambmc2dsurqec_15micron_masked.nii*')
 
 #Load nifti
-img= nibabel.load("C:\\Users\\tinas\\Desktop\\Sync\\Rec\\abi_50_average.nii.gz")
+img= nibabel.load(file)
 img_data = img.get_fdata()
 
+#Create Mesh
+verts, faces, normals, values = measure.marching_cubes_lewiner(img_data)
 
-#img_data[img_data>5] = 20;
-            
+thefile = open(glob(path + 'ambmc2dsurqec_15micron_masked.obj')
+		)
+for item in verts:
+	thefile.write("v {0} {1} {2}\n".format(item[0],item[1],item[2]))
+for item in normals:
+	thefile.write("vn {0} {1} {2}\n".format(item[0],item[1],item[2]))
+for item in faces:
+	thefile.write("f {0}//{0} {1}//{1} {2}//{2}\n".format(item[0],item[1],item[2]))  
+thefile.close()
 
-#Create Mesh  TODO: How to select a good value for the isosurface?? 10 yields more or less good results, but unsafe
-verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,10)
+#This seems only necessary for SurfIce, but does not work with for example mayavi
 faces=faces +1
 
 #Stolen form stackoverflow :) https://stackoverflow.com/questions/48844778/create-a-obj-file-from-3d-array-in-python
-thefile = open("C:\\Users\\tinas\\Desktop\\Sync\\Rec\\test.obj", 'w')
+thefile = open(glob(path + 'ambmc2dsurqec_15micron_masked_SurfIce.obj')
+		)
 for item in verts:
 	thefile.write("v {0} {1} {2}\n".format(item[0],item[1],item[2]))
 for item in normals:
