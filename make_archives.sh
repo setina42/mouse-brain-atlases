@@ -45,7 +45,9 @@ pushd ${P}
      if [ $MAKE_MESH ]; then
           bash ../ambmc2dsurqec.sh || exit 1
           mv ambmc2dsurqec_15micron.nii.gz ../{$PHD}
-          mv ambmc2dsurqec_15micron.obj ../{PHD}
+          mv ambmc2dsurqec_15micron_masked_SurfIce.obj ../${PHD}
+          mv ambmc2dsurqec_15micron_masked.obj ../${PHD}
+
      fi
 popd
 tar cfJ "${P}.tar.xz" ${P}
