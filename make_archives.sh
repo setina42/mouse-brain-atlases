@@ -31,9 +31,7 @@ cp FAIRUSE-AND-CITATION ${P}
 cp FAIRUSE-AND-CITATION ${PHD}
 pushd ${P}
      bash ../ambmc.sh || exit 1
-     mv ambmc_15micron.nii ../${PHD}
-     mv lambmc_15micron.nii ../${PHD}
-     cp ambmc_COPYING ../${PHD}
+    cp ambmc_COPYING ../${PHD}
      cp ambmc_README ../${PHD}
      bash ../dsurqec.sh || exit 1
      bash ../abi.sh || exit 1
@@ -49,6 +47,9 @@ pushd ${P}
           mv ambmc2dsurqec_15micron_masked.obj ../${PHD}
 
      fi
+mv ambmc_15micron.nii ../${PHD}
+mv lambmc_15micron.nii ../${PHD}
+ 
 popd
 tar cfJ "${P}.tar.xz" ${P}
 tar cfJ "${PHD}.tar.xz" ${PHD}

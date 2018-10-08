@@ -7,20 +7,12 @@ if [ -n "${STANDALONE}" ]; then
         
 	bash dsurqec.sh
 	bash ambmc.sh
-
-	# Resize
-        ResampleImage 3 dsurqec_40micron_masked.nii _dsurqec_15micron_masked.nii 0.015x0.015x0.015 size=1 spacing=0 4
-        SmoothImage 3 _dsurqec_15micron_masked.nii 0.4 dsurqec_15micron_masked.nii
-        fslorient -copyqform2sform dsurqec_15micron_masked.nii
-
-
-        # Cleanup
-        rm dsurqec_40micron.nii
-        rm dsurqec_40micron_mask.nii
-        rm _dsurqec_15micron_masked.nii 
-        
-
 fi
+	# Resize
+ResampleImage 3 dsurqec_40micron_masked.nii _dsurqec_15micron_masked.nii 0.015x0.015x0.015 size=1 spacing=0 4
+SmoothImage 3 _dsurqec_15micron_masked.nii 0.4 dsurqec_15micron_masked.nii
+fslorient -copyqform2sform dsurqec_15micron_masked.nii
+
 
 #Run AntsRegisatr
 antsAI -d 3 -v \
@@ -56,9 +48,9 @@ antsRegistration \
 	\
 	--transform SyN[0.25,3,0] \
 	--metric CC[dsurqec_15micron_masked.nii,ambmc_15micron.nii,1,4] \
-	--convergence [100x70x50x1,1e-6,10] \
-	--shrink-factors 8x4x2x1 \
-	--smoothing-sigmas 3x2x1x0vox \
+	--convergence [100x70x50,1e-6,10] \
+	--shrink-factors 8x4x2 \
+	--smoothing-sigmas 3x2x1vox \
 	\
 	--winsorize-image-intensities [ 0.05, 0.95 ] \
 	--write-composite-transform 1 \
