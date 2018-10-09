@@ -68,6 +68,12 @@ fslmaths 'ambmc2dsurqec_15micron.nii.gz' -mas 'dsurqec_15micron_mask_fromresampl
 
 
 #Make mesh file of transformed atlas
-python make_mesh.py
+if [ -n "${STANDALONE}" ]; then        
+	python make_mesh.py
+
+else
+	python ../make_mesh.py
+fi
+
 
 
