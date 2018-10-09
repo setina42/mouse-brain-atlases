@@ -30,8 +30,8 @@ thefile = open(path + '/ambmc2dsurqec_15micron_masked.obj','w')
 
 for item in verts:
 	transformed = f(item[0],item[1],item[2])
-    thefile.write("v {0} {1} {2}\n".format(transformed[0],transformed[1],transformed[2]))
-	#thefile.write("v {0} {1} {2}\n".format(item[0],item[1],item[2]))
+	thefile.write("v {0} {1} {2}\n".format(transformed[0],transformed[1],transformed[2]))
+
 for item in normals:
 	thefile.write("vn {0} {1} {2}\n".format(item[0],item[1],item[2]))
 for item in faces:
@@ -45,8 +45,8 @@ faces=faces +1
 thefile = open(path + '/ambmc2dsurqec_15micron_masked_SurfIce.obj','w')
 for item in verts:
 	transformed = f(item[0],item[1],item[2])
-    thefile.write("v {0} {1} {2}\n".format(transformed[0],transformed[1],transformed[2]))
-	#thefile.write("v {0} {1} {2}\n".format(item[0],item[1],item[2]))
+	thefile.write("v {0} {1} {2}\n".format(transformed[0],transformed[1],transformed[2]))
+
 for item in normals:
 	thefile.write("vn {0} {1} {2}\n".format(item[0],item[1],item[2]))
 for item in faces:
