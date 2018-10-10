@@ -66,6 +66,7 @@ fslorient -copyqform2sform ambmc2dsurqec_15micron.nii
 fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask_fromresampledfile.nii
 fslmaths 'ambmc2dsurqec_15micron.nii.gz' -mas 'dsurqec_15micron_mask_fromresampledfile.nii.gz' 'ambmc2dsurqec_15micron_masked.nii.gz'
 
+rm dsurqec_15micron_mask_fromresampledfile.nii.gz
 
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        

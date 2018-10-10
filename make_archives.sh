@@ -42,7 +42,8 @@ pushd ${P}
      mv abi_15_annotation.nii.gz ../${PHD}
      if $MAKE_MESH ; then
           bash ../ambmc2dsurqec.sh || exit 1
-          mv ambmc2dsurqec_15micron.nii.gz ../{$PHD}
+          mv ambmc2dsurqec_15micron.nii ../{$PHD}
+          mv ambmc2dsurqec_15micron_masked.nii.gz ../{$PHD}
           mv ambmc2dsurqec_15micron_masked_SurfIce.obj ../${PHD}
           mv ambmc2dsurqec_15micron_masked.obj ../${PHD}
 
