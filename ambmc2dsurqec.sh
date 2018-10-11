@@ -7,19 +7,23 @@ if [ -n "${STANDALONE}" ]; then
         
 	bash dsurqec.sh
 	bash ambmc.sh
+	rm lambmc*
+	rm ldsurqec_*
+	rm dsurqec_200*
+	rm ambmc_200*
 fi
-	# Resize
+
+# Resize
 ResampleImage 3 dsurqec_40micron_masked.nii _dsurqec_15micron_masked.nii 0.015x0.015x0.015 size=1 spacing=0 4
 SmoothImage 3 _dsurqec_15micron_masked.nii 0.4 dsurqec_15micron_masked.nii
 fslorient -copyqform2sform dsurqec_15micron_masked.nii
-
+rm _dsurqec_15micron_masked.nii
 
 #Run AntsRegisatr
 antsAI -d 3 -v \
         --transform Rigid[ 0.5 ] \
         --metric MI[dsurqec_15micron_masked.nii,ambmc_15micron.nii, 1, 64, Random, 0.1 ] \
         exit 1
-
 
 # Registration call
 antsRegistration \
@@ -58,15 +62,16 @@ antsRegistration \
 
 fslorient -copyqform2sform ambmc2dsurqec_15micron.nii
 
-#Apply mask
-#fslmaths 'ambmc2dsurqec_15micron.nii' -mas 'dsurqec_15micron_mask.nii' 'ambmc2dsurqec_15micron_masked.nii'
-#This is a bad idea. Dont use the resampled mask, but resample the masked image and make a new mask out of it. This can then be applied to amb,c2dsurqec. The resulting mesh is much smoother
-         
-
+#mask file
 fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask_fromresampledfile.nii
 fslmaths 'ambmc2dsurqec_15micron.nii.gz' -mas 'dsurqec_15micron_mask_fromresampledfile.nii.gz' 'ambmc2dsurqec_15micron_masked.nii.gz'
 
 rm dsurqec_15micron_mask_fromresampledfile.nii.gz
+
+#Create internal mask for easier surface mesh extraction
+fslmaths ambmc2dsurqec_15micron_masked.nii.gz -thr 10 -bin ambmc2dsurqec_15micron_mask.nii.gz
+fslmaths ambmc2dsurqec_15micron_mask.nii.gz -kernel boxv3 3 3 3 -ero -bin ambmc2dsurqec_15micron_mask_eroded_3.nii.gz
+
 
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        
@@ -75,6 +80,4 @@ if [ -n "${STANDALONE}" ]; then
 else
 	python ../make_mesh.py
 fi
-
-
 
