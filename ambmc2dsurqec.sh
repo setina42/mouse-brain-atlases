@@ -26,6 +26,9 @@ antsAI -d 3 -v \
         exit 1
 
 # Registration call
+
+#SyN registration restricted to 3 Levels and never at full resolution (shrink factor 1, smooothing sigmas 0). This will not affect size of output file,
+#but the final displacement field (.h5 file) will not be the correct size. If needed, add a token iteration at full resolution. This will increase memory consumption considerably.
 antsRegistration \
 	--float 1 \
 	--collapse-output-transforms 1 \
@@ -67,17 +70,17 @@ fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask_fromresa
 fslmaths 'ambmc2dsurqec_15micron.nii.gz' -mas 'dsurqec_15micron_mask_fromresampledfile.nii.gz' 'ambmc2dsurqec_15micron_masked.nii.gz'
 
 rm dsurqec_15micron_mask_fromresampledfile.nii.gz
-
-#Create internal mask for easier surface mesh extraction
-fslmaths ambmc2dsurqec_15micron_masked.nii.gz -thr 10 -bin ambmc2dsurqec_15micron_mask.nii.gz
-fslmaths ambmc2dsurqec_15micron_mask.nii.gz -kernel boxv3 3 3 3 -ero -bin ambmc2dsurqec_15micron_mask_eroded_3.nii.gz
+rm ambmc2dsurqec_Composite.h5
+rm ambmc2dsurqec_InverseComposite.h5
 
 
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        
+	bash make_internal_mask.sh
 	python make_mesh.py
 
 else
+	bash ../make_internal_mask.sh
 	python ../make_mesh.py
 fi
 
