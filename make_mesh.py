@@ -21,7 +21,7 @@ def remove_inner_surface(img_data,mask,mask_smoothed,percentile=50):
 	percentile : determines values to be filled inside
 	
 	Returns:
-	fin : manipulated data matrix to be used for marching cube
+	img_data : manipulated data matrix to be used for marching cube
 	iso_surface : corresponding iso surface value to use for marching cube
 	"""
 	#Keep original array
@@ -92,7 +92,7 @@ def main():
 
 	parser = argparse.ArgumentParser(description="Create surface mesh form nifti-volume",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--file_prefix','-f',default='Mesh', type=str)
-	parser.add_argument('--percentile','-p',default=50,type=int)
+	parser.add_argument('--percentile','-p',default=50,type=float)
 	args = parser.parse_args()
 
 	path = os.path.abspath('.')
@@ -113,8 +113,8 @@ def main():
 	img_data,iso_surface = remove_inner_surface(img_data,mask,mask_smoothed,args.percentile)
 	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
 
-	write_obj(str.join((path,args.file_prefix,"_1.obj")),verts,faces,normals,values,affine = img.affine,one=True)
-	write_obj(str.join((path,"ambmc2dsurqec_15_micron_mesh_0.obj")),verts,faces,normals,values,affine = img.affine,one=False)
-
+	#save mesh as .obj
+	write_obj((path + args.file_prefix + "_1.obj"),verts,faces,normals,values,affine = img.affine,one=True)
+#	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0.obj"),verts,faces,normals,values,affine = img.affine,one=False)
 
 main()
