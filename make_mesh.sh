@@ -7,13 +7,13 @@ echo "Mask made"
 
 #create smaller, internal masks
 python mask_erode.py
-
+echo "Internal masks created"
 #smooth one mask heavily
 SmoothImage 3 ambmc2dsurqec_mask_eroded6.nii.gz 10 ambmc2dsurqec_mask_eroded6_smoothed.nii.gz
 rm ambmc2dsurqec_mask_eroded6.nii.gz
 
 #make mesh using marching cube
-python make_mesh.py
+python make_mesh.py -p 0.2
 
 rm ambmc2dsurqec_mask_eroded6_smoothed.nii.gz
 rm ambmc2dsurqec_mask_eroded10.nii.gz
