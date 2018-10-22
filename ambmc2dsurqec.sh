@@ -76,11 +76,10 @@ rm ambmc2dsurqec_InverseComposite.h5
 
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        
-	bash make_internal_mask.sh
-	python make_mesh.py
+	bash make_mesh.sh
+
 
 else
-	bash ../make_internal_mask.sh
-	python ../make_mesh.py
+	bash ../make_mesh.sh
 fi
 

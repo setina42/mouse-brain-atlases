@@ -44,8 +44,8 @@ pushd ${P}
           bash ../ambmc2dsurqec.sh || exit 1
           mv ambmc2dsurqec_15micron.nii ../{$PHD}
           mv ambmc2dsurqec_15micron_masked.nii.gz ../{$PHD}
-          mv ambmc2dsurqec_15micron_surfacemesh_0.obj ../${PHD}
-          mv ambmc2dsurqec_15micron_surfacemesh_1.obj ../${PHD}
+          mv ambmc2dsurqec_15micron_mesh_0.obj ../${PHD}
+          mv ambmc2dsurqec_15micron_mesh_1.obj ../${PHD}
      fi
 mv ambmc_15micron.nii ../${PHD}
 mv lambmc_15micron.nii ../${PHD}
