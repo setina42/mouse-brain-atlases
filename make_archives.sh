@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
-
-##Possible calls to script: make_archives.sh PN PV | make_archives.sh --make-mesh | make_archives PN PV --make-mesh | make_archives.sh 
 MAKE_MESH=false
 
-if [ "$1" == "--make-mesh" ]; then
-     MAKE_MESH=true
-     PN=$2
-     PV=$3
-else 
-     PN=$1
-     PV=$2
-     if [ "$3" == "--make-mesh" ]; then
-          MAKE_MESH=true
-     fi
-fi
+while getopts ':v:n:m' flag; do
+     case "${flag}" in
+          v)
+               PV="$OPTARG"
+               ;;
+          n)
+               PN="$OPTARG"
+               ;;
+          m)
+               MAKE_MESH=true
+               ;;
+          :)
+               echo "Option -$OPTARG requires an argument." >&2
+               exit 1
+               ;;
+     esac
+done
 
 if [ -z "$PV" ]; then
      PV=9999
 fi
+
 if [ -z "$PN" ]; then
      PN="mouse-brain-atlas"
 fi
