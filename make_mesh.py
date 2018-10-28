@@ -10,7 +10,7 @@ import scipy
 from subprocess import call
 import argparse
 #
-def remove_inner_surface(img_data,mask,mask_smoothed,percentile=50):
+def remove_inner_surface(img_data,mask,mask_smoothed,percentile=8):
 	"""
 	Function to replace inner data of the given volume with a smoothed, uniform masking to avoid generation of inner surface structures and staircase artifacts when using marching cube algorithm
 	
@@ -21,7 +21,7 @@ def remove_inner_surface(img_data,mask,mask_smoothed,percentile=50):
 	percentile : determines values to be filled inside
 	
 	Returns:
-	img_data : manipulated data matrix to be used for marching cube
+	fin : manipulated data matrix to be used for marching cube
 	iso_surface : corresponding iso surface value to use for marching cube
 	"""
 	#Keep original array
@@ -91,8 +91,7 @@ def write_obj(name,verts,faces,normals,values,affine=None,one=False):
 def main():
 
 	parser = argparse.ArgumentParser(description="Create surface mesh form nifti-volume",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument('--file_prefix','-f',default='Mesh', type=str)
-	parser.add_argument('--percentile','-p',default=50,type=float)
+	parser.add_argument('--percentile','-p',default=8,type=float)
 	args = parser.parse_args()
 
 	path = os.path.abspath('.')
@@ -111,10 +110,10 @@ def main():
 
 	#Replace inner values and run marching cube
 	img_data,iso_surface = remove_inner_surface(img_data,mask,mask_smoothed,args.percentile)
-	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
+	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data)
 
 	#save mesh as .obj
-	write_obj((path + args.file_prefix + "_1.obj"),verts,faces,normals,values,affine = img.affine,one=True)
-#	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0.obj"),verts,faces,normals,values,affine = img.affine,one=False)
+	write_obj((path + "ambmc2dsurqec_15_micron_mesh_1_n.obj"),verts,faces,normals,values,affine = img.affine,one=True)
+	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0_n.obj"),verts,faces,normals,values,affine = img.affine,one=False)
 
 main()
