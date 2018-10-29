@@ -17,7 +17,7 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	img_data :input volume data to extract mesh from
 	mask : inner internal mask acting as size boundary to smoothed mask
 	mask_smoothed : smoothed internal mask
-	percentile : determines values to be filled inside
+	treshhold : determines values to be filled inside
 	
 	Returns:
 	fin : manipulated data matrix to be used for marching cube
@@ -33,13 +33,8 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	origin = numpy.copy(img_data)
 
 	
-	#Determine inner replacement value
-	treshhold= numpy.percentile(img_data[numpy.nonzero(img_data)],percentile)
-	treshhold=floor(treshhold)
-	treshhold= 640000
 	#Fill in the holes within the boundary of the eroded mask
 	img_data[(img_data > 0) & (mask == 1)] = treshhold
-	
 	
 	#To create a smooth inner data matrix that has the overall mean value as max value, calculate value needed to multiply with mask
 	substitute_value = float(treshhold) / float(numpy.max(mask))
@@ -84,7 +79,7 @@ def cut_img(img,bbox,size,axis,direction):
 	dims = numpy.shape(img)
 	ind = bbox[axis-1]
 	if (direction == 0):
-		new_ind = ind[0] + size
+		new_ind = ind[0] - size
 		slc = [slice(None)] * len(img.shape)
 		slc[axis] = slice(0,new_ind)
 	elif (direction == 1):
@@ -123,25 +118,31 @@ def main():
 
 	parser = argparse.ArgumentParser(description="Create surface mesh form nifti-volume",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--treshhold','-t',default=0,type=float)
-	parser.add_argument('--cut', '-c',nargs = '*')
+	parser.add_argument('--cut', '-c',type=int,nargs = '*')
 	args = parser.parse_args()
 
 	path = os.path.abspath('.')
 	path = path + '/'
 	
 	#Load necessary niftifiles: data volume, internal mask, intenal smoothed mask
-	img= nibabel.load(path + 'ambmc2dsurqec_15micron_masked_bigger_smooth.nii.gz')
+	img= nibabel.load(path + 'ambmc2dsurqec_15micron.nii')
 	img_data = img.get_fdata()
 
-	img2=nibabel.load(path + "mask_smoothed6.nii.gz")
+	img2=nibabel.load(path + "dsurqec_15micron_mask_smoothed.nii.gz")
 	mask = img2.get_fdata()
 
+
+
+	img3=nibabel.load(path + "dsurqec_15micron_mask.nii.gz")
+	mask_bound = img3.get_fdata()
+
+
 	#Replace inner values and run marching cube
-	box = get_bounding_slices(img_data)
+	box = get_bounding_slices(mask_bound)
 	img_data,iso_surface = remove_inner_surface(img_data,mask,args.treshhold)
 	if (args.cut != None):
 		print("cut not none")
-		img_data = cut_img(img_data,box,*args.cut)
+		img_data = cut_img(img_data,box,(*args.cut))
 	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
 
 	#save mesh as .obj

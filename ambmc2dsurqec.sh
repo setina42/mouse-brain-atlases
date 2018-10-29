@@ -65,21 +65,18 @@ antsRegistration \
 
 fslorient -copyqform2sform ambmc2dsurqec_15micron.nii
 
-#mask file
-fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask_fromresampledfile.nii
-fslmaths 'ambmc2dsurqec_15micron.nii.gz' -mas 'dsurqec_15micron_mask_fromresampledfile.nii.gz' 'ambmc2dsurqec_15micron_masked.nii.gz'
-
-rm dsurqec_15micron_mask_fromresampledfile.nii.gz
 rm ambmc2dsurqec_Composite.h5
 rm ambmc2dsurqec_InverseComposite.h5
 
+#create mask
+fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask.nii
+
+#smooth mask
+SmoothImage 3 dsurqec_15micron_mask.nii.gz 6 dsurqec_15micron_mask_smoothed.nii.gz
 
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        
-	bash make_mesh.sh
-
-
+	python make_mesh.py -t 640000 -c 25 1 0
 else
-	bash ../make_mesh.sh
+	python ../make_mesh.py -t 640000 -c 25 1 0
 fi
-
