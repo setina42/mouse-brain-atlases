@@ -9,7 +9,7 @@ from math import floor
 import scipy
 import argparse
 #
-def remove_inner_surface(img_data,mask,mask_smoothed,percentile=8):
+def remove_inner_surface(img_data,mask,treshhold=0):
 	"""
 	Function to replace inner data of the given volume with a smoothed, uniform masking to avoid generation of inner surface structures and staircase artifacts when using marching cube algorithm
 	
@@ -23,42 +23,46 @@ def remove_inner_surface(img_data,mask,mask_smoothed,percentile=8):
 	fin : manipulated data matrix to be used for marching cube
 	iso_surface : corresponding iso surface value to use for marching cube
 	"""
+	x,y,z = numpy.shape(img_data)
+	x = floor(0.5* x)
+	y = floor(0.5*y)
+	z = floor(0.5*z)
+
+	print(img_data[:,y,z])
 	#Keep original array
 	origin = numpy.copy(img_data)
 
-	#In order to not distort size, take only smoothed values that lie wihtin the boundary of the bigger mask. 
-	mask[numpy.nonzero(mask)] = mask_smoothed[numpy.nonzero(mask)]
 	
 	#Determine inner replacement value
-	percentile_value= numpy.percentile(img_data[numpy.nonzero(img_data)],percentile)
-	percentile_value=floor(percentile_value)
-
+	treshhold= numpy.percentile(img_data[numpy.nonzero(img_data)],percentile)
+	treshhold=floor(treshhold)
+	treshhold= 640000
 	#Fill in the holes within the boundary of the eroded mask
-	img_data[(img_data > 0) & (mask == 1)] = percentile_value
-	print("percentile_value")
-	print(percentile_value)
+	img_data[(img_data > 0) & (mask == 1)] = treshhold
 	
-	#Scale mask as to have smooth treshhold on both sides.
-	mask_min = numpy.min(mask[numpy.nonzero(mask)])
-	mask[numpy.nonzero(mask)] = numpy.subtract(mask[numpy.nonzero(mask)],mask_min)
-	mask_min = numpy.min(mask[numpy.nonzero(mask)])
-	mask[numpy.nonzero(mask)] = numpy.subtract(mask[numpy.nonzero(mask)],mask_min)
-
+	
 	#To create a smooth inner data matrix that has the overall mean value as max value, calculate value needed to multiply with mask
-	substitute_value = float(percentile_value) / float(numpy.max(mask))
-	
+	substitute_value = float(treshhold) / float(numpy.max(mask))
+	print(img_data[:,y,z])
+
 	#Replace all inner values of the original data matrix with the smoothed mask multiplied by substitute
 	img_data[numpy.nonzero(mask)]=numpy.multiply(mask[numpy.nonzero(mask)],substitute_value)
+	print(img_data[:,y,z])
 
 	#Choose the isosurface value slightly below the substitute value. This will ensure a singular mesh.
-	iso_surface = float(percentile_value) / float(1.05)
+	iso_surface = float(treshhold) / float(1.05)
 	
 	#The final data matrix consists of the maximum values in either the smoothed mask or the original. This ensures that either the original data will be taken or, in case
 	#where the original data matrix will have too low intensities for marching cube to detect (i.e creating wholes in the mesh), the smoothed mask will be taken. 
-	fin = numpy.fmax(img_data,origin)
+	
+	fin = numpy.copy(img_data)
+	fin[numpy.nonzero(img_data)] = numpy.fmax(img_data[numpy.nonzero(img_data)],origin[numpy.nonzero(img_data)])
+	print(img_data[:,y,z])
 	return(fin,iso_surface);
 
+#Define the bounding box of the data matrix. 
 def get_bounding_slices(img):
+	dims = numpy.shape(img)
 	mask = img == 0
 	bbox = []
 	all_axis = numpy.arange(img.ndim)
@@ -68,16 +72,26 @@ def get_bounding_slices(img):
 		dmask_i = numpy.diff(mask_i)
 		idx_i = numpy.nonzero(dmask_i)[0]
 		if len(idx_i) != 2:
-			raise ValueError('Algorithm failed, {} does not have 2 elements!'.format(idx_i))
+			print("kdim, idx_i")
+			print(kdim)
+			print(idx_i)
+			idx_i = [idx_i, dims[kdim]-2]
 		bbox.append([idx_i[0]+1, idx_i[1]+1])
 	return bbox
 
-
+#
 def cut_img(img,bbox,size,axis,direction):
+	dims = numpy.shape(img)
 	ind = bbox[axis-1]
-	new_ind = ind[0] + size
-
-	img[:,0:new_ind,:] = 0
+	if (direction == 0):
+		new_ind = ind[0] + size
+		slc = [slice(None)] * len(img.shape)
+		slc[axis] = slice(0,new_ind)
+	elif (direction == 1):
+		new_ind = ind[1] - size
+		slc = [slice(None)] * len(img.shape)
+		slc[axis] = slice(new_ind,dims[axis])
+	img[tuple(slc)] = 0
 	return img
 
 #Returns affine transformed coordinates (i,j,k) -> (x,y,z) Use to set correct coordinates and size for the mesh
@@ -85,8 +99,6 @@ def f(i, j, k, affine):
 	M = affine[:3, :3]
 	abc = affine[:3, 3]
 	return M.dot([i, j, k]) + abc
-
-
 
 #Writes an .obj file for the output of marching cube algorithm. Specify affine if needed in mesh. One = True for faces indexing starting at 1 as opposed to 0. Necessary for Blender/SurfIce
 def write_obj(name,verts,faces,normals,values,affine=None,one=False):
@@ -110,7 +122,8 @@ def write_obj(name,verts,faces,normals,values,affine=None,one=False):
 def main():
 
 	parser = argparse.ArgumentParser(description="Create surface mesh form nifti-volume",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument('--percentile','-p',default=8,type=float)
+	parser.add_argument('--treshhold','-t',default=0,type=float)
+	parser.add_argument('--cut', '-c',nargs = '*')
 	args = parser.parse_args()
 
 	path = os.path.abspath('.')
@@ -119,22 +132,20 @@ def main():
 	#Load necessary niftifiles: data volume, internal mask, intenal smoothed mask
 	img= nibabel.load(path + 'ambmc2dsurqec_15micron_masked_bigger_smooth.nii.gz')
 	img_data = img.get_fdata()
-	origin = numpy.copy(img_data)
 
-	img2=nibabel.load(path + "ambmc2dsurqec_mask_eroded10.nii.gz")
+	img2=nibabel.load(path + "mask_smoothed6.nii.gz")
 	mask = img2.get_fdata()
 
-	img3=nibabel.load(path + "ambmc2dsurqec_mask_eroded6_smoothed.nii.gz")
-	mask_smoothed = img3.get_fdata()
-
 	#Replace inner values and run marching cube
-	img_data,iso_surface = remove_inner_surface(img_data,mask,mask_smoothed,args.percentile)
 	box = get_bounding_slices(img_data)
-	img_data = cut_img(img_data,box,50,1,0)
-	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data)
+	img_data,iso_surface = remove_inner_surface(img_data,mask,args.treshhold)
+	if (args.cut != None):
+		print("cut not none")
+		img_data = cut_img(img_data,box,*args.cut)
+	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
 
 	#save mesh as .obj
-	write_obj((path + "ambmc2dsurqec_15_micron_mesh_1_n.obj"),verts,faces,normals,values,affine = img.affine,one=True)
-	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0_n.obj"),verts,faces,normals,values,affine = img.affine,one=False)
+	write_obj((path + "ambmc2dsurqec_15_micron_mesh_1.obj"),verts,faces,normals,values,affine = img.affine,one=True)
+	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0.obj"),verts,faces,normals,values,affine = img.affine,one=False)
 
 main()
