@@ -7,7 +7,6 @@ import numpy
 import os
 from math import floor
 import scipy
-from subprocess import call
 import argparse
 #
 def remove_inner_surface(img_data,mask,mask_smoothed,percentile=8):
@@ -59,7 +58,27 @@ def remove_inner_surface(img_data,mask,mask_smoothed,percentile=8):
 	fin = numpy.fmax(img_data,origin)
 	return(fin,iso_surface);
 
+def get_bounding_slices(img):
+	mask = img == 0
+	bbox = []
+	all_axis = numpy.arange(img.ndim)
+	for kdim in all_axis:
+		nk_dim = numpy.delete(all_axis, kdim)
+		mask_i = mask.all(axis=tuple(nk_dim))
+		dmask_i = numpy.diff(mask_i)
+		idx_i = numpy.nonzero(dmask_i)[0]
+		if len(idx_i) != 2:
+			raise ValueError('Algorithm failed, {} does not have 2 elements!'.format(idx_i))
+		bbox.append([idx_i[0]+1, idx_i[1]+1])
+	return bbox
 
+
+def cut_img(img,bbox,size,axis,direction):
+	ind = bbox[axis-1]
+	new_ind = ind[0] + size
+
+	img[:,0:new_ind,:] = 0
+	return img
 
 #Returns affine transformed coordinates (i,j,k) -> (x,y,z) Use to set correct coordinates and size for the mesh
 def f(i, j, k, affine):
@@ -98,7 +117,7 @@ def main():
 	path = path + '/'
 	
 	#Load necessary niftifiles: data volume, internal mask, intenal smoothed mask
-	img= nibabel.load(path + 'ambmc2dsurqec_15micron_masked.nii.gz')
+	img= nibabel.load(path + 'ambmc2dsurqec_15micron_masked_bigger_smooth.nii.gz')
 	img_data = img.get_fdata()
 	origin = numpy.copy(img_data)
 
@@ -110,6 +129,8 @@ def main():
 
 	#Replace inner values and run marching cube
 	img_data,iso_surface = remove_inner_surface(img_data,mask,mask_smoothed,args.percentile)
+	box = get_bounding_slices(img_data)
+	img_data = cut_img(img_data,box,50,1,0)
 	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data)
 
 	#save mesh as .obj
