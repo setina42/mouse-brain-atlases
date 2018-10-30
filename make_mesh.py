@@ -55,7 +55,27 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	print(img_data[:,y,z])
 	return(fin,iso_surface);
 
-#Define the bounding box of the data matrix. 
+def test():
+	print("wohoooo")
+	return
+
+#Either take boundary from supplied mask or if not specified, from image directly
+def cut_img_mas(file_input,file_output,size,axis,direction,mask = None):
+	img= nibabel.load(file_input)
+	img_data = img.get_fdata()
+	header=img.header.copy()
+	if (mask != None):
+		mask= nibabel.load(mask)
+		mask_data = mask.get_fdata()
+		box = get_bounding_slices(mask_data)
+	else:
+		box = get_bounding_slices(img_data)
+	img_data = cut_img(img_data,box,size,axis,direction)
+	img_nifti=nibabel.Nifti1Image(img_data,None,header=header)
+	nibabel.save(img_nifti,file_output)
+	return
+
+#Define the boundin:g box of the data matrix. 
 def get_bounding_slices(img):
 	dims = numpy.shape(img)
 	mask = img == 0
@@ -67,14 +87,14 @@ def get_bounding_slices(img):
 		dmask_i = numpy.diff(mask_i)
 		idx_i = numpy.nonzero(dmask_i)[0]
 		if len(idx_i) != 2:
-			print("kdim, idx_i")
-			print(kdim)
-			print(idx_i)
-			idx_i = [idx_i, dims[kdim]-2]
+			#TODO: see if one boundary has been found, and check that)
+			print("No clear boundary found (no zero entries?) in dimension" + kdim)
+			print("Boundary of data matrix is returned instead")
+			idx_i = [0, dims[kdim]-2]
 		bbox.append([idx_i[0]+1, idx_i[1]+1])
 	return bbox
 
-#
+# Trim image along specified axis, size input = voxel
 def cut_img(img,bbox,size,axis,direction):
 	dims = numpy.shape(img)
 	ind = bbox[axis-1]
@@ -115,9 +135,10 @@ def write_obj(name,verts,faces,normals,values,affine=None,one=False):
 	thefile.close()
 
 def main():
-
 	parser = argparse.ArgumentParser(description="Create surface mesh form nifti-volume",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--treshhold','-t',default=0,type=float)
+	parser.add_argument('--image_name','-i',type=str)
+	parser.add_argument('--mask_name','-m',type=str)
 	parser.add_argument('--cut', '-c',type=int,nargs = '*')
 	args = parser.parse_args()
 
@@ -125,28 +146,25 @@ def main():
 	path = path + '/'
 	
 	#Load necessary niftifiles: data volume, internal mask, intenal smoothed mask
-	img= nibabel.load(path + 'ambmc2dsurqec_15micron.nii')
+	img= nibabel.load(path + args.image_name)
 	img_data = img.get_fdata()
 
-	img2=nibabel.load(path + "dsurqec_15micron_mask_smoothed.nii.gz")
+	img2=nibabel.load(path + args.mask_name)
 	mask = img2.get_fdata()
 
-
-
-	img3=nibabel.load(path + "dsurqec_15micron_mask.nii.gz")
-	mask_bound = img3.get_fdata()
-
+#	img3=nibabel.load(path + "dsurqec_15micron_mask.nii.gz")
+#	mask_bound = img3.get_fdata()
 
 	#Replace inner values and run marching cube
-	box = get_bounding_slices(mask_bound)
+#	box = get_bounding_slices(mask_bound)
 	img_data,iso_surface = remove_inner_surface(img_data,mask,args.treshhold)
-	if (args.cut != None):
-		print("cut not none")
-		img_data = cut_img(img_data,box,(*args.cut))
+#	if (args.cut != None):
+#		print("cut not none")
+#		img_data = cut_img(img_data,box,(*args.cut))
 	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
 
 	#save mesh as .obj
-	write_obj((path + "ambmc2dsurqec_15_micron_mesh_1.obj"),verts,faces,normals,values,affine = img.affine,one=True)
-	write_obj((path + "ambmc2dsurqec_15_micron_mesh_0.obj"),verts,faces,normals,values,affine = img.affine,one=False)
+	write_obj((path + (args.image_name).split(".")[0] + "_mesh_1.obj"),verts,faces,normals,values,affine = img.affine,one=True)
+	write_obj((path + (args.image_name).split(".")[0] + "_mesh_0.obj"),verts,faces,normals,values,affine = img.affine,one=False)
 
-main()
+if __name__ == '__main__': main()

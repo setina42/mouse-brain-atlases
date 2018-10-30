@@ -1,20 +1,90 @@
 #!/usr/bin/env bash
 
-#Script to create mesh from volume data. 
-#make mask
-fslmaths ambmc2dsurqec_15micron_masked.nii.gz -thr 10 -bin ambmc2dsurqec_mask.nii.gz
-echo "Mask made"
+echo arrived
 
-#create smaller, internal masks
-python mask_erode.py
-echo "Internal masks created"
-#smooth one mask heavily
-SmoothImage 3 ambmc2dsurqec_mask_eroded6.nii.gz 10 ambmc2dsurqec_mask_eroded6_smoothed.nii.gz
-rm ambmc2dsurqec_mask_eroded6.nii.gz
+CUT=false
+MASK=false
+BOUNDARY=false
 
-#make mesh using marching cube
-python make_mesh.py -p 0.2
+while getopts ':i:t:bcs:a:d:m:' flag; do
+        case "${flag}" in
 
-rm ambmc2dsurqec_mask_eroded6_smoothed.nii.gz
-rm ambmc2dsurqec_mask_eroded10.nii.gz
-rm ambmc2dsurqec_mask.nii.gz
+                i)
+                        IMAGE_NAME="$OPTARG"
+                        ;;
+                  
+                t)      TRESHHOLD="$OPTARG"
+                        ;;
+                b)
+                        BOUNDARY=true
+                        ;;
+
+                c)
+                        CUT=true
+                        ;;
+                s)
+                        SIZE="$OPTARG"
+                        ;;
+                a)
+                        AXIS="$OPTARG"
+                        ;;
+                d)
+                        DIRECTION="$OPTARG"
+                        ;;
+                m)  
+                        MASK=true
+                        MASK_FILE="$OPTARG"
+                        ;;
+        esac
+done
+
+
+if $MASK; then
+        NAME=($(echo $MASK_FILE | tr "." "\n"))
+        PREFIX=${NAME[0]}
+        echo $PREFIX
+        SUFFIX=_mask.nii.gz
+        MASK_NAME=$PREFIX$SUFFIX
+        echo $MASK_FILE 
+        echo $MASK_NAME
+        fslmaths $MASK_FILE -thr 10 -bin $MASK_NAME
+
+else
+        NAME=$(echo $IMAGE_NAME | tr "." "\n")
+        PREFIX=${NAME[0]}
+        SUFFIX=_mask.nii.gz
+        MASK_NAME=$PREFIX$SUFFIX
+        fslmaths $IMAGE_NAME -thr 10 -bin $MASK_NAME
+fi
+
+echo mask created
+
+NAME_M=$(echo $MASK_NAME | tr "." "\n")
+PREFIX_M=${NAME_M[0]}
+SUFFIX_M=_smoothed.nii.gz
+SMOOTHED_MASK=$PREFIX_M$SUFFIX_M
+
+#smooth one mask 
+SmoothImage 3 $MASK_NAME 6 $SMOOTHED_MASK
+
+#make mesh using marching cube. 
+echo mask smoothed
+
+if $CUT; then
+        SUFFIX="_cut.nii.gz"
+        OUTPUTFILE=$PREFIX$SUFFIX
+        if $BOUNDARY; then
+                python -c 'import make_mesh; make_mesh.cut_img_mas($IMAGE_NAME,$OUTPUTFILE,$SIZE,$AXIS,$DIRECTION,$MASK_NAME)'
+                IMAGE_NAME=$OUTPUTFILE
+        else
+                python -c 'import make_mesh; make_mesh.cut_img_mas($IMAGE_NAME,$OUTPUTFILE,$SIZE,$AXIS,$DIRECTION)'
+                IMAGE_NAME=$OUTPUTFILE
+        fi
+        echo Image cut
+fi
+
+python make_mesh.py -i $IMAGE_NAME -m $SMOOTHED_MASK -t $TRESHHOLD
+
+echo mesh created
+
+#cleanUP
