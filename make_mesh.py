@@ -79,7 +79,7 @@ def cut_img(img,bbox,size,axis,direction):
 	dims = numpy.shape(img)
 	ind = bbox[axis-1]
 	if (direction == 0):
-		new_ind = ind[0] - size
+		new_ind = ind[0] + size
 		slc = [slice(None)] * len(img.shape)
 		slc[axis] = slice(0,new_ind)
 	elif (direction == 1):
