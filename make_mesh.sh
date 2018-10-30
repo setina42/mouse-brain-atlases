@@ -50,7 +50,7 @@ if $MASK; then
         fslmaths $MASK_FILE -thr 10 -bin $MASK_NAME
 
 else
-        NAME=$(echo $IMAGE_NAME | tr "." "\n")
+        NAME=$((echo $IMAGE_NAME | tr "." "\n"))
         PREFIX=${NAME[0]}
         SUFFIX=_mask.nii.gz
         MASK_NAME=$PREFIX$SUFFIX
@@ -59,10 +59,13 @@ fi
 
 echo mask created
 
-NAME_M=$(echo $MASK_NAME | tr "." "\n")
+NAME_M=($(echo $MASK_NAME | tr "." "\n"))
 PREFIX_M=${NAME_M[0]}
 SUFFIX_M=_smoothed.nii.gz
 SMOOTHED_MASK=$PREFIX_M$SUFFIX_M
+
+echo $MASK_NAME
+echo $SMOOTHED_MASK
 
 #smooth one mask 
 SmoothImage 3 $MASK_NAME 6 $SMOOTHED_MASK
@@ -73,18 +76,19 @@ echo mask smoothed
 if $CUT; then
         SUFFIX="_cut.nii.gz"
         OUTPUTFILE=$PREFIX$SUFFIX
+        echo $OUTPUTFILE
         if $BOUNDARY; then
-                python -c 'import make_mesh; make_mesh.cut_img_mas($IMAGE_NAME,$OUTPUTFILE,$SIZE,$AXIS,$DIRECTION,$MASK_NAME)'
+                python -c "import make_mesh; make_mesh.cut_img_mas(\"$IMAGE_NAME\",\"$OUTPUTFILE\",$SIZE,$AXIS,$DIRECTION,\"$MASK_NAME\")"
                 IMAGE_NAME=$OUTPUTFILE
         else
-                python -c 'import make_mesh; make_mesh.cut_img_mas($IMAGE_NAME,$OUTPUTFILE,$SIZE,$AXIS,$DIRECTION)'
+                        python -c "import make_mesh; make_mesh.cut_img_mas(\"$IMAGE_NAME\",\"$OUTPUTFILE\",$SIZE,$AXIS,$DIRECTION)"
                 IMAGE_NAME=$OUTPUTFILE
         fi
         echo Image cut
-fi
+        
 
+fi
 python make_mesh.py -i $IMAGE_NAME -m $SMOOTHED_MASK -t $TRESHHOLD
 
 echo mesh created
-
 #cleanUP
