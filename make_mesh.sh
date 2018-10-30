@@ -74,8 +74,10 @@ SmoothImage 3 $MASK_NAME 6 $SMOOTHED_MASK
 echo mask smoothed
 
 if $CUT; then
-        SUFFIX="_cut.nii.gz"
-        OUTPUTFILE=$PREFIX$SUFFIX
+        NAME_C=$((echo $IMAGE_NAME | tr "." "\n"))
+        PREFIX_C=${NAME_C[0]}
+        SUFFIX_c="_cut.nii.gz"
+        OUTPUTFILE=$PREFIX_C$SUFFIX_C
         echo $OUTPUTFILE
         if $BOUNDARY; then
                 python -c "import make_mesh; make_mesh.cut_img_mas(\"$IMAGE_NAME\",\"$OUTPUTFILE\",$SIZE,$AXIS,$DIRECTION,\"$MASK_NAME\")"
