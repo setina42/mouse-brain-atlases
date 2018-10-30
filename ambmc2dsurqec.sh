@@ -68,15 +68,9 @@ fslorient -copyqform2sform ambmc2dsurqec_15micron.nii
 rm ambmc2dsurqec_Composite.h5
 rm ambmc2dsurqec_InverseComposite.h5
 
-#create mask
-fslmaths dsurqec_15micron_masked.nii -thr 10 -bin dsurqec_15micron_mask.nii
-
-#smooth mask
-SmoothImage 3 dsurqec_15micron_mask.nii.gz 6 dsurqec_15micron_mask_smoothed.nii.gz
-
 #Make mesh file of transformed atlas
 if [ -n "${STANDALONE}" ]; then        
-	python make_mesh.py -t 640000 -c 25 1 0
+	bash make_mesh.sh -i ambmc2dsurqec_15micron.nii -t 640000 -m dsurqec_15micron_masked.nii -c -s 20 -a 1 -d 0 -b
 else
-	python ../make_mesh.py -t 640000 -c 25 1 0
+	bash make_mesh.sh -i ambmc2dsurqec_15micron.nii -t 640000 -m dsurqec_15micron_masked.nii -c -s 20 -a 1 -d 0 -b
 fi
