@@ -61,7 +61,9 @@ def test():
 
 #Either take boundary from supplied mask or if not specified, from image directly
 def cut_img_mas(file_input,file_output,size,axis,direction,mask = None):
-	img= nibabel.load(file_input)
+	path = os.path.abspath('.')
+	path = path + '/'
+	img= nibabel.load(path+file_input)
 	img_data = img.get_fdata()
 	header=img.header.copy()
 	if (mask != None):
