@@ -2,8 +2,9 @@
 
 echo arrived
 
-DIR=echo $(cd ../ && pwd)
-export PYTHONPATH="${PYTHONPATH}:$DIR"
+D=$(cd ../ && pwd)
+echo $D
+export PYTHONPATH="${PYTHONPATH}:$D"
 
 CUT=false
 MASK=false
@@ -50,12 +51,13 @@ if $MASK; then
         RESOLUTION=($(echo $RESOLUTION | tr " " "\n"))
         RESOLUTION=${RESOLUTION[1]}
         CM=x
-        RESOLUTION=$RESOLTUION$CM$RESOLUTION$CM$RESOLUTION$CM
+        RESOLUTION=$RESOLUTION$CM$RESOLUTION$CM$RESOLUTION
         NAME=($(echo $MASK_FILE | tr "." "\n"))
         PREFIX=${NAME[0]}
         SUFFIX=_resampled.nii.gz
         MASK_NAME=$PREFIX$SUFFIX
-        ResampleImage 3 $MASK_FILE $MASK_NAME size=1 spacing=0 1
+        echo ResampleImage 3 $MASK_FILE $MASK_NAME $RESOLUTION size=1 spacing=0 1
+        ResampleImage 3 $MASK_FILE $MASK_NAME $RESOLUTION size=1 spacing=0 1
 
 fi
 if [ "$MASK" == "false" ]; then
