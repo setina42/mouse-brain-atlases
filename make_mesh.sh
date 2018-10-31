@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH="${PYTHONPATH}:$(cd ../ && pwd)"
+echo arrived
+
+DIR=echo $(cd ../ && pwd)
+export PYTHONPATH="${PYTHONPATH}:$DIR"
 
 CUT=false
 MASK=false
 BOUNDARY=false
+
+
 
 while getopts ':i:t:bcs:a:d:m:' flag; do
         case "${flag}" in
@@ -38,16 +43,19 @@ while getopts ':i:t:bcs:a:d:m:' flag; do
         esac
 done
 
-echo $MASK
+
 if $MASK; then
+        
+        RESOLUTION=$(fslinfo $IMAGE_NAME | grep pixdim1)
+        RESOLUTION=($(echo $RESOLUTION | tr " " "\n"))
+        RESOLUTION=${RESOLUTION[1]}
+        CM=x
+        RESOLUTION=$RESOLTUION$CM$RESOLUTION$CM$RESOLUTION$CM
         NAME=($(echo $MASK_FILE | tr "." "\n"))
         PREFIX=${NAME[0]}
-        echo $PREFIX
-        SUFFIX=_mask.nii.gz
+        SUFFIX=_resampled.nii.gz
         MASK_NAME=$PREFIX$SUFFIX
-        echo $MASK_FILE 
-        echo $MASK_NAME
-        fslmaths $MASK_FILE -thr 10 -bin $MASK_NAME
+        ResampleImage 3 $MASK_FILE $MASK_NAME size=1 spacing=0 1
 
 fi
 if [ "$MASK" == "false" ]; then
@@ -75,13 +83,10 @@ SmoothImage 3 $MASK_NAME 6 $SMOOTHED_MASK
 echo mask smoothed
 
 if $CUT; then
-        echo $IMAGE_NAME
         NAME_C=($(echo $IMAGE_NAME | tr "." "\n"))
         PREFIX_C=${NAME_C[0]}
         SUFFIX_C="_cut.nii.gz"
         OUTPUTFILE=$PREFIX_C$SUFFIX_C
-        echo $PREFIX_C
-        echo $SUFFIX_C
         echo $OUTPUTFILE
         if $BOUNDARY; then
                 python -c "import make_mesh; make_mesh.cut_img_mas(\"$IMAGE_NAME\",\"$OUTPUTFILE\",$SIZE,$AXIS,$DIRECTION,\"$MASK_NAME\")"
@@ -95,12 +100,11 @@ if $CUT; then
 
 fi
 
-if [ -f make_mesh.py ];then
-
+if [ -f make_mesh.py ]; then
         python make_mesh.py -i $IMAGE_NAME -m $SMOOTHED_MASK -t $TRESHHOLD
 else
         python ../make_mesh.py -i $IMAGE_NAME -m $SMOOTHED_MASK -t $TRESHHOLD
-
 fi
+
 echo mesh created
 #cleanUP
