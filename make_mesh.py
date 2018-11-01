@@ -14,10 +14,9 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	Function to replace inner data of the given volume with a smoothed, uniform masking to avoid generation of inner surface structures and staircase artifacts when using marching cube algorithm
 	
 	Input:
-	img_data :input volume data to extract mesh from
-	mask : inner internal mask acting as size boundary to smoothed mask
-	mask_smoothed : smoothed internal mask
-	treshhold : determines values to be filled inside
+	img_data :input volume data to extract mesh from, numpy-array
+	mask : smoothed internal mask, numpy-array
+	treshhold : determines isosurface and values for the inner mask
 	
 	Returns:
 	fin : manipulated data matrix to be used for marching cube
@@ -28,7 +27,6 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	y = floor(0.5*y)
 	z = floor(0.5*z)
 
-	print(img_data[:,y,z])
 	#Keep original array
 	origin = numpy.copy(img_data)
 
@@ -38,29 +36,35 @@ def remove_inner_surface(img_data,mask,treshhold=0):
 	
 	#To create a smooth inner data matrix that has the overall mean value as max value, calculate value needed to multiply with mask
 	substitute_value = float(treshhold) / float(numpy.max(mask))
-	print(img_data[:,y,z])
 
 	#Replace all inner values of the original data matrix with the smoothed mask multiplied by substitute
 	img_data[numpy.nonzero(mask)]=numpy.multiply(mask[numpy.nonzero(mask)],substitute_value)
-	print(img_data[:,y,z])
 
-	#Choose the isosurface value slightly below the substitute value. This will ensure a singular mesh.
+	#Choose the isosurface value slightly below the substitute value. This will ensure a singular mesh and a smooth surface in case mask is visible.
 	iso_surface = float(treshhold) / float(1.05)
 	
 	#The final data matrix consists of the maximum values in either the smoothed mask or the original. This ensures that either the original data will be taken or, in case
-	#where the original data matrix will have too low intensities for marching cube to detect (i.e creating wholes in the mesh), the smoothed mask will be taken. 
+	#where the original data matrix will have too low intensities for marching cube to detect (i.e creating wholes in the mesh), the smoothed mask will be taken,resulting in smooth surface
 	
 	fin = numpy.copy(img_data)
 	fin[numpy.nonzero(img_data)] = numpy.fmax(img_data[numpy.nonzero(img_data)],origin[numpy.nonzero(img_data)])
 	print(img_data[:,y,z])
 	return(fin,iso_surface);
 
-def test():
-	print("wohoooo")
-	return
-
 #Either take boundary from supplied mask or if not specified, from image directly
 def cut_img_mas(file_input,file_output,size,axis,direction,mask = None):
+	"""
+	Function to trim data matrix before mesh creation. Reads in nifti file and saves the trimmed image as nifti file.
+
+	Input:
+	file_input:file name of image to be loaded and cut (nifti format)
+	file_output: output file name
+	size : number of voxels to trim
+	axis : axis along which to trim (0,1,2)
+	direction : either trim form beginning af axis inwards or from end of axis inwards
+	mask : optional. If given, boundary of image will be determined from the mask. Needed if image has boundary with non-zero entries
+	"""
+
 	path = os.path.abspath('.')
 	path = path + '/'
 	img= nibabel.load(path+file_input)
@@ -79,6 +83,10 @@ def cut_img_mas(file_input,file_output,size,axis,direction,mask = None):
 
 #Define the boundin:g box of the data matrix. 
 def get_bounding_slices(img):
+	"""
+	Function to determine the boundaries of the given image. Returns range of indices through the matrix that contain non-zero entries alon each axis
+	"""
+
 	dims = numpy.shape(img)
 	mask = img == 0
 	bbox = []
@@ -98,6 +106,20 @@ def get_bounding_slices(img):
 
 # Trim image along specified axis, size input = voxel
 def cut_img(img,bbox,size,axis,direction):
+	"""
+	Function to trim an image data matrix.
+
+	Input:
+	img: Image,numpy array
+	bbox: Integer values for each axis that specify bounding box of image
+	size: number of voxels to trim
+	axis: axis along which to trim (0,1,2)
+	direction: either trim form beginning af axis inwards or from end of axis inwards
+
+	returns:
+	img trimmed data matrix 
+	"""
+
 	dims = numpy.shape(img)
 	ind = bbox[axis-1]
 	if (direction == 0):
@@ -111,14 +133,26 @@ def cut_img(img,bbox,size,axis,direction):
 	img[tuple(slc)] = 0
 	return img
 
-#Returns affine transformed coordinates (i,j,k) -> (x,y,z) Use to set correct coordinates and size for the mesh
 def f(i, j, k, affine):
+	"""
+	Returns affine transformed coordinates (i,j,k) -> (x,y,z) Use to set correct coordinates and size for the mesh
+	
+	"""
+
 	M = affine[:3, :3]
 	abc = affine[:3, 3]
 	return M.dot([i, j, k]) + abc
 
 #Writes an .obj file for the output of marching cube algorithm. Specify affine if needed in mesh. One = True for faces indexing starting at 1 as opposed to 0. Necessary for Blender/SurfIce
 def write_obj(name,verts,faces,normals,values,affine=None,one=False):
+	"""
+	Write a .obj file for the output of marching cube algorithm
+
+	input:
+	name,verts,faces,normals: output of marching cube algoritgm
+	affine: optional, if specified, vertices coordinates are affine transformed to create mesh with correct origin and size
+	one : Specify if faces values should start at 1 or at 0. Different programs use different conventions.
+	"""
 	if (one) : faces=faces+1
 	thefile = open(name,'w')
 	if affine is not None:
@@ -154,15 +188,8 @@ def main():
 	img2=nibabel.load(path + args.mask_name)
 	mask = img2.get_fdata()
 
-#	img3=nibabel.load(path + "dsurqec_15micron_mask.nii.gz")
-#	mask_bound = img3.get_fdata()
-
 	#Replace inner values and run marching cube
-#	box = get_bounding_slices(mask_bound)
 	img_data,iso_surface = remove_inner_surface(img_data,mask,args.treshhold)
-#	if (args.cut != None):
-#		print("cut not none")
-#		img_data = cut_img(img_data,box,(*args.cut))
 	verts, faces, normals, values = measure.marching_cubes_lewiner(img_data,iso_surface)
 
 	#save mesh as .obj

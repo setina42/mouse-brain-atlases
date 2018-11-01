@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
 
-echo arrived
-
+#add parent directory to PYTONPATH
 D=$(cd ../ && pwd)
-echo $D
 export PYTHONPATH="${PYTHONPATH}:$D"
 
+#default
 CUT=false
 MASK=false
 BOUNDARY=false
 
+USAGE="usage:\n\
+        'basename $0'  -i <image file> -t <treshhold> [-m <mask-file>] [-c] [-s <size> -a <axis> -d <direction>] [-b]\n\
+        -i: Image file name to create mesh from. Nifti format required.
+        -t: Treshhold for marching cube algorithm
+        -m: Optional mask file to be provided. Will be resampled to resolution of image file. If not specified, mask is created out of Image.
+        -c: invokes additional function that trims brain image prior to mesh creation. Identifies image boundaries (non-zero entries) and Need to specify  
+        -s: size of cut in voxel
+        -a: axis along which to cut (0,1,2)
+        -d: direction of cut. 0: trim from start of axis inwards 1:trim from end of axis inwards
+        -b: use the given mask as boundary for cut
+        -h: displays help message."
 
-
-while getopts ':i:t:bcs:a:d:m:' flag; do
+#read options
+while getopts ':i:t:bcs:a:d:m:h' flag; do
         case "${flag}" in
 
                 i)
@@ -41,6 +51,10 @@ while getopts ':i:t:bcs:a:d:m:' flag; do
                         MASK=true
                         MASK_FILE="$OPTARG"
                         ;;
+                h)
+                        echo -e "$USAGE"
+                        exit 0
+                        ;;
         esac
 done
 
@@ -57,7 +71,6 @@ if $MASK; then
         SUFFIX=_resampled.nii.gz
         MASK_NAME=$PREFIX$SUFFIX
         echo ResampleImage 3 $MASK_FILE $MASK_NAME $RESOLUTION size=1 spacing=0 1
-        ResampleImage 3 $MASK_FILE $MASK_NAME $RESOLUTION size=1 spacing=0 1
 
 fi
 if [ "$MASK" == "false" ]; then
@@ -75,8 +88,6 @@ PREFIX_M=${NAME_M[0]}
 SUFFIX_M=_smoothed.nii.gz
 SMOOTHED_MASK=$PREFIX_M$SUFFIX_M
 
-echo $MASK_NAME
-echo $SMOOTHED_MASK
 
 #smooth one mask 
 SmoothImage 3 $MASK_NAME 6 $SMOOTHED_MASK
@@ -89,7 +100,6 @@ if $CUT; then
         PREFIX_C=${NAME_C[0]}
         SUFFIX_C="_cut.nii.gz"
         OUTPUTFILE=$PREFIX_C$SUFFIX_C
-        echo $OUTPUTFILE
         if $BOUNDARY; then
                 python -c "import make_mesh; make_mesh.cut_img_mas(\"$IMAGE_NAME\",\"$OUTPUTFILE\",$SIZE,$AXIS,$DIRECTION,\"$MASK_NAME\")"
                 IMAGE_NAME=$OUTPUTFILE
@@ -109,4 +119,3 @@ else
 fi
 
 echo mesh created
-#cleanUP
