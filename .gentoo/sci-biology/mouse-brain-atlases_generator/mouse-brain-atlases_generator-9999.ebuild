@@ -17,9 +17,7 @@ KEYWORDS=""
 
 # Numpy dependency to circumvent scikits_learn dependency bug:
 # https://bugs.gentoo.org/653052
-DEPEND="test? ( sci-biology/samri_bindata )"
 RDEPEND="
-	>=dev-python/matplotlib-2.0.2[${PYTHON_USEDEP}]
 	>=dev-python/numpy-1.13.3[${PYTHON_USEDEP}]
 	>=sci-biology/fsl-5.0.9
 	sci-libs/nibabel[${PYTHON_USEDEP}]
@@ -27,6 +25,7 @@ RDEPEND="
 	sci-biology/nilearn[${PYTHON_USEDEP}]
 	>=sci-libs/scikits_image-0.13.0[${PYTHON_USEDEP}]
 	>=media-gfx/blender
+	dev-python/pynrrd
 	"
 
 src_unpack() {
